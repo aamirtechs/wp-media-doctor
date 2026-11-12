@@ -1,0 +1,18 @@
+id,file,url,alt_text,width,height,size_bytes,mime,hash,uploaded
+1,hero.jpg,https://example.com/wp-content/uploads/2026/01/hero.jpg,Team photo at the office,2400,1600,850000,image/jpeg,aaa111,2026-01-10
+2,banner.png,https://example.com/wp-content/uploads/2026/02/banner.png,,1920,600,1200000,image/png,bbb222,2026-02-01
+3,IMG_4521.jpg,https://example.com/wp-content/uploads/2026/03/IMG_4521.jpg,IMG_4521.jpg,4000,3000,3500000,image/jpeg,ccc333,2026-03-05
+4,team-photo.jpg,https://example.com/wp-content/uploads/2026/04/team-photo.jpg,Group photo of the support team,1200,800,400000,image/jpeg,ddd444,2026-04-12
+5,logo.svg,https://example.com/wp-content/uploads/2026/01/logo.svg,Company logo,500,200,45000,image/svg+xml,eee555,2026-01-15
+6,old-scan.tiff,https://example.com/wp-content/uploads/2025/11/old-scan.tiff,Scanned brochure page,1800,1200,2200000,image/tiff,fff666,2025-11-20
+7,product-a.jpg,https://example.com/wp-content/uploads/2026/05/product-a.jpg,Blue widget product shot,1600,1200,900000,image/jpeg,aaa111,2026-05-01
+8,product-b.jpg,https://example.com/wp-content/uploads/2026/05/product-b.jpg,x,800,600,300000,image/jpeg,ggg777,2026-05-02
+9,screenshot-2024-05-01.png,https://example.com/wp-content/uploads/2026/05/screenshot-2024-05-01.png,screenshot-2024-05-01,1440,900,700000,image/png,hhh888,2026-05-03
+10,brochure.pdf,https://example.com/wp-content/uploads/2026/06/brochure.pdf,,,,150000,application/pdf,iii999,2026-06-01
+11,empty.png,https://example.com/wp-content/uploads/2026/06/empty.png,Empty image,100,100,0,image/png,jjj000,2026-06-02
+12,badsize.jpg,https://example.com/wp-content/uploads/2026/06/badsize.jpg,Bad size row,800,600,not-a-number,image/jpeg,kkk111,2026-06-03
+13,short,short
+14,future.jpg,https://example.com/wp-content/uploads/2027/01/future.jpg,Future upload,800,600,200000,image/jpeg,lll222,2027-01-01
+15,longalt.jpg,https://example.com/wp-content/uploads/2026/07/longalt.jpg,"A close-up product photograph showing the blue widget from three angles with its packaging, power cable, and instruction booklet arranged neatly on a white desk",800,600,200000,image/jpeg,mmm333,2026-07-01
+16,nodims.jpg,https://example.com/wp-content/uploads/2026/07/nodims.jpg,No dimensions here,,,250000,image/jpeg,nnn444,2026-07-02
+17,hero-copy.jpg,https://example.com/wp-content/uploads/2026/01/hero.jpg,Hero copy,2400,1600,850000,image/jpeg,ooo555,2026-07-03

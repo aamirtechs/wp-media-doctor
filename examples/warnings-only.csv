@@ -1,0 +1,4 @@
+id,file,url,alt_text,width,height,size_bytes,mime,hash,uploaded
+1,photo-one.jpg,https://example.com/wp-content/uploads/2026/05/photo-one.jpg,photo,800,600,300000,image/jpeg,aaa111,2026-05-01
+2,nodims.jpg,https://example.com/wp-content/uploads/2026/07/nodims.jpg,No dimensions here,,,250000,image/jpeg,bbb222,2026-07-02
+3,future.jpg,https://example.com/wp-content/uploads/2027/01/future.jpg,Future upload,800,600,200000,image/jpeg,ccc333,2027-01-01

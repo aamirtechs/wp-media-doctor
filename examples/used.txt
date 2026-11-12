@@ -1,0 +1,15 @@
+# Image URLs and file names found in site content, one per line.
+# Lines starting with # are comments and are ignored.
+https://example.com/wp-content/uploads/2026/01/hero.jpg
+https://example.com/wp-content/uploads/2026/02/banner.png
+https://example.com/wp-content/uploads/2026/03/IMG_4521.jpg
+logo.svg
+https://example.com/wp-content/uploads/2026/05/product-a.jpg
+https://example.com/wp-content/uploads/2026/05/product-b.jpg
+https://example.com/wp-content/uploads/2026/05/screenshot-2024-05-01.png
+https://example.com/wp-content/uploads/2026/06/empty.png
+https://example.com/wp-content/uploads/2026/06/badsize.jpg
+https://example.com/wp-content/uploads/2027/01/future.jpg
+https://example.com/wp-content/uploads/2026/07/longalt.jpg
+https://example.com/wp-content/uploads/2026/07/nodims.jpg
+https://example.com/wp-content/uploads/2026/07/hero-copy.jpg

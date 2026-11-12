@@ -1,0 +1,4 @@
+id,file,url,alt_text,width,height,size_bytes,mime,hash,uploaded
+1,hero.jpg,https://example.com/wp-content/uploads/2026/01/hero.jpg,Team photo at the office,2400,1600,850000,image/jpeg,aaa111,2026-01-10
+2,logo.svg,https://example.com/wp-content/uploads/2026/01/logo.svg,Company logo,500,200,45000,image/svg+xml,eee555,2026-01-15
+3,product.jpg,https://example.com/wp-content/uploads/2026/05/product.jpg,Blue widget product shot,1600,1200,900000,image/jpeg,ddd444,2026-05-01
