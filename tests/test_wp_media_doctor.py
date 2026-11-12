@@ -596,5 +596,200 @@ class TestOutputAndCli(unittest.TestCase):
         self.assertEqual(caught.exception.code, 0)
 
 
+class TestDeletable(unittest.TestCase):
+    """The --deletable safe-to-delete list."""
+
+    def _sample_path(self):
+        base = os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__)))
+        return os.path.join(base, "examples", "media.csv")
+
+    def _used_path(self):
+        base = os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__)))
+        return os.path.join(base, "examples", "used.txt")
+
+    def _used_file(self, lines):
+        handle = tempfile.NamedTemporaryFile(
+            "w", suffix=".txt", delete=False, encoding="utf-8")
+        handle.write("\n".join(lines) + "\n")
+        handle.close()
+        return handle.name
+
+    def _listed(self, report):
+        return {entry["file"]: entry["reason"]
+                for entry in report["deletable"]}
+
+    def test_sample_deletable_list(self):
+        report = wp_media_doctor.analyze_file(
+            self._sample_path(), as_of=AS_OF,
+            used_file=self._used_path(), deletable=True)
+        listed = self._listed(report)
+        self.assertEqual(set(listed),
+                         {"product-a.jpg", "old-scan.tiff"})
+        self.assertIn("duplicate", listed["product-a.jpg"])
+        self.assertIn("unused", listed["old-scan.tiff"])
+        self.assertIn("oversized", listed["old-scan.tiff"])
+        self.assertNotIn("team-photo.jpg", listed)
+
+    def test_list_is_absent_without_the_flag(self):
+        report = run_csv(HEADER + row())
+        self.assertNotIn("deletable", report)
+
+    def test_unused_clean_image_is_not_listed(self):
+        path = self._used_file(["https://example.com/other.jpg"])
+        try:
+            report = run_csv(HEADER + row(), used_file=path,
+                             deletable=True)
+        finally:
+            os.unlink(path)
+        self.assertEqual(report["deletable"], [])
+
+    def test_unused_oversized_image_is_listed(self):
+        path = self._used_file(["https://example.com/other.jpg"])
+        try:
+            report = run_csv(HEADER + row(size="2000000"),
+                             used_file=path, deletable=True)
+        finally:
+            os.unlink(path)
+        listed = self._listed(report)
+        self.assertIn("a.jpg", listed)
+        self.assertIn("unused and oversized", listed["a.jpg"])
+
+    def test_used_oversized_image_is_not_listed(self):
+        path = self._used_file(["https://example.com/a.jpg"])
+        try:
+            report = run_csv(HEADER + row(size="2000000"),
+                             used_file=path, deletable=True)
+        finally:
+            os.unlink(path)
+        self.assertNotIn("a.jpg", self._listed(report))
+
+    def test_unused_unsupported_image_is_listed(self):
+        path = self._used_file(["https://example.com/other.jpg"])
+        try:
+            report = run_csv(
+                HEADER + row(file="scan.tiff",
+                             url="https://example.com/scan.tiff",
+                             mime="image/tiff"),
+                used_file=path, deletable=True)
+        finally:
+            os.unlink(path)
+        listed = self._listed(report)
+        self.assertIn("scan.tiff", listed)
+        self.assertIn("unsupported", listed["scan.tiff"])
+
+    def test_unused_non_image_is_not_listed(self):
+        path = self._used_file(["https://example.com/other.jpg"])
+        try:
+            report = run_csv(
+                HEADER + row(file="brochure.pdf",
+                             url="https://example.com/brochure.pdf",
+                             mime="application/pdf", alt="",
+                             width="", height=""),
+                used_file=path, deletable=True)
+        finally:
+            os.unlink(path)
+        self.assertNotIn("brochure.pdf", self._listed(report))
+
+    def test_duplicate_is_listed_even_when_used(self):
+        path = self._used_file(["https://example.com/a.jpg",
+                                "https://example.com/b.jpg"])
+        text = HEADER + row(row_id="1") + row(
+            file="b.jpg", url="https://example.com/b.jpg",
+            row_id="2")
+        try:
+            report = run_csv(text, used_file=path,
+                             deletable=True)
+        finally:
+            os.unlink(path)
+        listed = self._listed(report)
+        self.assertIn("b.jpg", listed)
+        self.assertIn("duplicate", listed["b.jpg"])
+        self.assertNotIn("a.jpg", listed)
+
+    def test_text_output_has_deletable_section(self):
+        report = wp_media_doctor.analyze_file(
+            self._sample_path(), as_of=AS_OF,
+            used_file=self._used_path(), deletable=True)
+        text = wp_media_doctor.format_text(report)
+        self.assertIn("Safe to delete (report only, "
+                      "nothing is deleted):", text)
+        self.assertIn("- product-a.jpg: duplicate", text)
+        self.assertIn("- old-scan.tiff: unused and oversized",
+                      text)
+        self.assertLess(text.index("Images: 16"),
+                        text.index("Safe to delete"))
+
+    def test_text_output_says_none_when_nothing_listable(self):
+        base = os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__)))
+        report = wp_media_doctor.analyze_file(
+            os.path.join(base, "examples", "clean.csv"),
+            as_of=AS_OF, deletable=True)
+        text = wp_media_doctor.format_text(report)
+        self.assertIn("Safe to delete (report only, "
+                      "nothing is deleted):\n- none.", text)
+
+    def test_text_output_omits_section_without_the_flag(self):
+        report = run_csv(HEADER + row())
+        text = wp_media_doctor.format_text(report)
+        self.assertNotIn("Safe to delete", text)
+
+    def test_json_output_includes_deletable(self):
+        path = self._used_file(["https://example.com/other.jpg"])
+        try:
+            report = run_csv(HEADER + row(alt="", size="2000000"),
+                             used_file=path, deletable=True)
+        finally:
+            os.unlink(path)
+        parsed = json.loads(wp_media_doctor.format_json(report))
+        self.assertEqual(len(parsed["deletable"]), 1)
+        self.assertEqual(parsed["deletable"][0]["file"], "a.jpg")
+
+    def test_cli_deletable_prints_list_after_summary(self):
+        handle = tempfile.NamedTemporaryFile(
+            "w", suffix=".csv", delete=False, encoding="utf-8")
+        handle.write(HEADER + row() + row(
+            file="b.jpg", url="https://example.com/b.jpg",
+            row_id="2"))
+        handle.close()
+        saved = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            code = wp_media_doctor.main(
+                [handle.name, "--deletable", "--as-of",
+                 "2026-11-12"])
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = saved
+            os.unlink(handle.name)
+        self.assertEqual(code, 0)
+        self.assertIn("Images: 2", output)
+        self.assertIn("Safe to delete (report only, "
+                      "nothing is deleted):", output)
+        self.assertIn("- b.jpg: duplicate", output)
+        self.assertLess(output.index("Images: 2"),
+                        output.index("Safe to delete"))
+
+    def test_deletable_files_unit(self):
+        files = [
+            wp_media_doctor.MediaFile(
+                "a.jpg", "https://example.com/a.jpg", "Alt",
+                800, 600, 1000, "image/jpeg", "aaa", None),
+            wp_media_doctor.MediaFile(
+                "b.jpg", "https://example.com/b.jpg", "Alt",
+                800, 600, 1000, "image/jpeg", "aaa", None),
+        ]
+        findings = [
+            wp_media_doctor.Finding(
+                "b.jpg", "duplicate-file", "error", "dup"),
+        ]
+        listed = wp_media_doctor.deletable_files(files, findings)
+        self.assertEqual(len(listed), 1)
+        self.assertEqual(listed[0]["file"], "b.jpg")
+        self.assertIn("duplicate", listed[0]["reason"])
+
+
 if __name__ == "__main__":
     unittest.main()

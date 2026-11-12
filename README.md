@@ -181,6 +181,31 @@ The reference date defaults to today. `--as-of` pins it, so
 the future-date check above is reproducible; without it
 the check moves as time passes.
 
+Add `--deletable` to print, after the summary, the list of
+files the audit considers safe to delete:
+
+```bash
+python3 wp_media_doctor.py examples/media.csv --as-of 2026-11-12 --used-file examples/used.txt --deletable
+```
+
+```
+Images: 16, total size: 11745000 bytes, findings: 21, errors: 10, warnings: 11
+
+Safe to delete (report only, nothing is deleted):
+- old-scan.tiff: unused and oversized and unsupported format
+- product-a.jpg: duplicate of an earlier upload of the same content hash
+```
+
+Nothing is deleted; the list is a report only, and each
+line names the reason. A file is listed when it is a
+duplicate beyond the first upload of its content hash, or
+when it is an unused image that is also oversized or in an
+unsupported format. An unused image that is otherwise clean,
+such as team-photo.jpg above, is left off the list, because
+an unused image may still be wanted. With `--json` the same
+list appears as a `deletable` array of file and reason
+objects.
+
 Use it as a CI gate: `--check` exits 1 when any error is
 found, and 0 otherwise. On the sample above it exits 1:
 
@@ -263,6 +288,7 @@ Captured output (first findings and summary):
 | `--max-alt` | Maximum alt text length in characters (default: 125) |
 | `--as-of` | Reference date as YYYY-MM-DD (default: today) |
 | `--json` | Emit JSON instead of text |
+| `--deletable` | After the summary, list the files safe to delete, each with its reason (report only) |
 | `--check` | Exit 1 if any error is found |
 | `--strict` | With --check, also exit 1 on warnings |
 | `--out` | Write the report to a file |
@@ -296,7 +322,7 @@ Captured output (first findings and summary):
 python3 -m unittest discover -s tests -v
 ```
 
-77 tests, all passing: alt text rules including the
+91 tests, all passing: alt text rules including the
 filename, camera, screenshot, generic-word, short, and long
 cases, size and dimension limits and their boundaries,
 duplicate hashes and URLs, every supported and unsupported
@@ -304,8 +330,9 @@ format, mime inference from extensions, the usage list
 including URL and base-name matching, malformed rows,
 missing columns, header aliases, BOM headers, invalid,
 missing, and future dates, sample counts, JSON output
-shape, and `--check` and `--strict` exit codes. The same
-77 tests pass under pytest.
+shape, `--check` and `--strict` exit codes, and the
+`--deletable` safe-to-delete list. The same 91 tests pass
+under pytest.
 
 ## License
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+* `--deletable` prints, after the summary, the files the
+  audit considers safe to delete: duplicate uploads beyond
+  the first of each content hash, and unused images that are
+  also oversized or in an unsupported format. Each line
+  names the reason; the list is a report only, and an unused
+  image that is otherwise clean stays off it.
+
 ## 1.0.0 - 2026-11-12
 
 Initial release.
