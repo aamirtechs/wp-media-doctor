@@ -33,6 +33,7 @@ Usage:
     python3 wp_media_doctor.py examples/media.csv --as-of 2026-11-12
     python3 wp_media_doctor.py media.csv --used-file used.txt --json --check
     python3 wp_media_doctor.py media.csv --max-size 500000 --max-width 1920
+    python3 wp_media_doctor.py media.csv --used-file used.txt --deletable
 """
 
 import argparse
@@ -455,10 +456,63 @@ def load_media(path, as_of, max_size, max_width, max_alt,
     return files, findings, used_entries is not None
 
 
+def deletable_files(files, findings):
+    """Return the files the audit considers safe to delete.
+
+    This is a report only: nothing is deleted. A file is
+    listed when it is a duplicate beyond the first upload of
+    its content hash, or when it is an unused image that is
+    also oversized or in an unsupported format. An unused
+    image that is otherwise clean is not listed, because an
+    unused image may still be wanted. Each entry names the
+    reason the file is on the list.
+    """
+    duplicate = set()
+    unused = set()
+    oversized = set()
+    unsupported = set()
+    for finding in findings:
+        if finding.rule == "duplicate-file":
+            duplicate.add(finding.name)
+        elif finding.rule == "unused-image":
+            unused.add(finding.name)
+        elif finding.rule == "oversized":
+            oversized.add(finding.name)
+        elif finding.rule == "unsupported-format":
+            unsupported.add(finding.name)
+    listed = []
+    for item in files:
+        name = item.file or item.url
+        reasons = []
+        if name in duplicate:
+            reasons.append(
+                "duplicate of an earlier upload of the same "
+                "content hash")
+        if name in unused and is_image_mime(item.mime or ""):
+            parts = []
+            if name in oversized:
+                parts.append("oversized")
+            if name in unsupported:
+                parts.append("unsupported format")
+            if parts:
+                reasons.append(
+                    "unused and " + " and ".join(parts))
+        if reasons:
+            listed.append({"file": name,
+                           "reason": "; ".join(reasons)})
+    return listed
+
+
 def analyze_file(path, as_of=None, max_size=DEFAULT_MAX_SIZE,
                  max_width=DEFAULT_MAX_WIDTH,
-                 max_alt=DEFAULT_MAX_ALT, used_file=None):
-    """Audit one media file and return the report dict."""
+                 max_alt=DEFAULT_MAX_ALT, used_file=None,
+                 deletable=False):
+    """Audit one media file and return the report dict.
+
+    With deletable=True the report also carries the
+    deletable list: the files safe to delete, each with the
+    reason it is on the list.
+    """
     if as_of is None:
         as_of = datetime.date.today()
     used_entries = None
@@ -491,8 +545,11 @@ def analyze_file(path, as_of=None, max_size=DEFAULT_MAX_SIZE,
         "unused": unused,
         "used_file": used,
     }
-    return {"summary": summary, "formats": format_rows,
-            "findings": [f.as_dict() for f in findings]}
+    report = {"summary": summary, "formats": format_rows,
+              "findings": [f.as_dict() for f in findings]}
+    if deletable:
+        report["deletable"] = deletable_files(files, findings)
+    return report
 
 
 def format_text(report):
@@ -523,6 +580,16 @@ def format_text(report):
                      "unused-image checks were skipped.")
     if not report["findings"]:
         lines.append("All media clean.")
+    if "deletable" in report:
+        lines.append("")
+        lines.append("Safe to delete (report only, nothing is "
+                     "deleted):")
+        if report["deletable"]:
+            for entry in report["deletable"]:
+                lines.append("- %s: %s"
+                             % (entry["file"], entry["reason"]))
+        else:
+            lines.append("- none.")
     return "\n".join(lines) + "\n"
 
 
@@ -570,6 +637,10 @@ def main(argv=None):
                              "(default: today)")
     parser.add_argument("--json", action="store_true",
                         help="emit JSON instead of text")
+    parser.add_argument("--deletable", action="store_true",
+                        help="after the summary, list the files "
+                             "the audit considers safe to delete "
+                             "(report only)")
     parser.add_argument("--check", action="store_true",
                         help="exit 1 if any error is found")
     parser.add_argument("--strict", action="store_true",
@@ -597,7 +668,8 @@ def main(argv=None):
                               max_size=args.max_size,
                               max_width=args.max_width,
                               max_alt=args.max_alt,
-                              used_file=args.used_file)
+                              used_file=args.used_file,
+                              deletable=args.deletable)
     except FileNotFoundError:
         print("error: file not found: %s" % args.path, file=sys.stderr)
         return 2
